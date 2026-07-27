@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat App - Versi 1.0</title>
+    <style>
+        /* === RESET & BACKGROUND === */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #e9f0ea; /* Warna latar belakang abu-hijau lembut */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; /* Posisikan chat di tengah layar vertikal */
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* === BINGKAI CHAT COMPACT (KOTAK UTAMA) === */
+        .chat-container {
+            width: 100%;
+            max-width: 380px; /* Dibuat lebih ramping menyerupai layar HP */
+            height: 85vh; 
+            max-height: 650px;
+            background: #ffffff;
+            border-radius: 20px; /* Sudut melengkung halus */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* === HEADER GAPURA (HIJAU TUA) === */
+        .chat-header {
+            background: linear-gradient(135deg, #1e3b32, #29574a); /* Hijau tua elegan ala Gapura */
+            color: #ffffff;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            z-index: 2;
+        }
+        .chat-header h3 {
+            margin: 0;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        /* === LOGO DI HEADER === */
+        .header-logo {
+            width: 28px;  /* Atur lebar logo */
+            height: 28px; /* Atur tinggi logo */
+            object-fit: contain; /* Biar gambar tidak gepeng */
+            background-color: white; /* Opsional: beri background putih kalau logonya gelap */
+            border-radius: 50%; /* Opsional: bikin logonya membulat */
+            padding: 2px;
+        }
+        /* Indikator Online dengan titik hijau nyala */
+        .status {
+            font-size: 12px;
+            color: #4ade80; 
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 5px #4ade80;
+        }
+
+        /* === AREA CHAT === */
+        .chat-box { 
+            flex: 1; /* Otomatis mengisi sisa ruang */
+            padding: 20px 16px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            background: #f5f9f6; /* Putih dengan hint hijau sangat tipis */
+            position: relative;
+        }
+
+        /* === WATERMARK LOGO TENGGELAM === */
+        .chat-box::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 160px; /* Diperkecil agar lebih proporsional */
+            height: 160px;
+            background-image: url('logogapura.png'); /* PASTIKAN NAMA FILE BENAR */
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: center;
+            opacity: 0.15; /* Sangat transparan agar elegan */
+            pointer-events: none; 
+            z-index: 0;
+        }
+
+        /* === BUBBLE CHAT (LEBIH COMPACT) === */
+        .message { 
+            padding: 10px 14px; 
+            max-width: 78%; 
+            word-wrap: break-word; 
+            font-size: 14px; /* Huruf sedikit dikecilkan agar muat banyak */
+            line-height: 1.4;
+            position: relative; 
+            z-index: 1;         
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .user-msg { 
+            background: linear-gradient(135deg, #42a967, #2f8e53); /* Hijau Gapura menyala */
+            color: #ffffff; 
+            align-self: flex-end; 
+            border-radius: 16px 16px 2px 16px; 
+        }
+        .ai-msg { 
+            background: #ffffff; 
+            color: #1e3b32; /* Teks dark green */
+            border: 1px solid #e2ece5;
+            align-self: flex-start; 
+            border-radius: 16px 16px 16px 2px; 
+        }
+
+        /* === AREA KETIK (INPUT) === */
+        .input-area { 
+            display: flex; 
+            padding: 12px 16px; 
+            background: #ffffff; 
+            border-top: 1px solid #e2ece5; 
+            gap: 10px;
+            align-items: center;
+            z-index: 2;
+        }
+        #user-input { 
+            flex: 1; 
+            padding: 12px 16px; 
+            background: #f0f5f1; /* Kolom ketik abu-hijau */
+            border: 1px solid transparent; 
+            border-radius: 24px; 
+            outline: none; 
+            font-size: 14px;
+            color: #1e3b32;
+            transition: all 0.2s ease;
+        }
+        #user-input:focus {
+            border-color: #42a967;
+            background: #ffffff;
+        }
+        
+        /* === TOMBOL KIRIM BULAT (MODERN) === */
+        #send-btn { 
+            background: #1e3b32; /* Hijau Tua Gapura */
+            color: white; 
+            border: none; 
+            width: 42px; 
+            height: 42px; 
+            border-radius: 50%; /* Dibuat bulat */
+            cursor: pointer; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.2s; 
+        }
+        #send-btn:hover { background: #2f8e53; }
+
+        /* Animasi Ketik (Typing) tetap sama */
+        .typing-indicator {
+            display: flex; align-items: center; gap: 4px; padding: 12px 16px;
+            background: #ffffff; border: 1px solid #e2ece5; border-radius: 18px 18px 18px 2px;
+            align-self: flex-start; width: max-content;
+        }
+        .typing-dot { width: 6px; height: 6px; background: #1e3b32; border-radius: 50%; opacity: 0.4; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <!-- === BAGIAN HTML (KERANGKA) === -->
+    <div class="chat-container">
+        <!-- Bagian Header Baru -->
+        <div class="chat-header">
+            <h3>
+                <!-- Pastikan nama file gambarnya sesuai dengan yang kamu miliki -->
+                <img src="logogapura.png" alt="Logo Gapura" class="header-logo">
+                Gapura Smart
+            </h3>
+            <span class="status">Online</span>
+        </div>
+        <div class="chat-box" id="chat-box">
+            <!-- Pesan pembuka -->
+            <div class="message ai-msg">Halo Bro! Ada yang bisa kubantu hari ini?</div>
+        </div>
+        <div class="input-area">
+        <input type="text" id="user-input" placeholder="Tanya seputar SOP..." autocomplete="off">
+        <button id="send-btn">
+            <!-- Ini adalah icon pesawat kertas (SVG) -->
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+        </button>
+    </div>
+    </div>
+
+    <!-- === BAGIAN JAVASCRIPT (LOGIKA) === -->
+  <!-- === BAGIAN JAVASCRIPT (LOGIKA) === -->
+    <!-- === BAGIAN JAVASCRIPT (LOGIKA) === -->
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+ 
+        // 1. MASUKKAN API KEY KAMU DI SINI
+        const API_KEY = 'AQ.Ab8RN6JB2xAKMBrBxD26m4hXd7HVWQMG7tE6YBft9N7RvMffRg'; 
+ 
+        // Array untuk menyimpan riwayat percakapan
+        let chatHistory = [];
+ 
+        // Fungsi merender Markdown (tebal & baris baru)
+        function parseMarkdown(text) {
+            let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); 
+            formattedText = formattedText.replace(/\n/g, '<br>'); 
+            return formattedText;
+        }
+ 
+        function addMessage(text, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message');
+            msgDiv.classList.add(sender === 'user' ? 'user-msg' : 'ai-msg');
+            msgDiv.innerHTML = parseMarkdown(text);
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+ 
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.classList.add('typing-indicator');
+            typingDiv.id = 'typing-indicator';
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement('div');
+                dot.classList.add('typing-dot');
+                typingDiv.appendChild(dot);
+            }
+            chatBox.appendChild(typingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+ 
+        function removeTypingIndicator() {
+            const typingDiv = document.getElementById('typing-indicator');
+            if (typingDiv) typingDiv.remove();
+        }
+ 
+        async function callGeminiAPI(promptText) {
+            // Menggunakan versi 1.5 flash yang lebih aman dari limit
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${API_KEY}`;
+            
+            chatHistory.push({
+                role: "user",
+                parts: [{ text: promptText }]
+            });
+ 
+            // ==========================================
+            // DI SINI TEMPAT MENGURUNG AI (SYSTEM INSTRUCTION)
+            // ==========================================
+            const requestData = {
+                systemInstruction: {
+                    parts: [{ 
+                        text: `Kamu adalah 'Gapura Smart', asisten operasional dan HR. 
+
+TUGAS MUTLAK: Kamu HANYA BOLEH menjawab pertanyaan berdasarkan "DOKUMEN ATURAN" di bawah ini. 
+
+ATURAN KETAT:
+1. Jika pengguna bertanya tentang informasi yang ada di DOKUMEN ATURAN, jawablah dengan detail dan profesional.
+2. Jika pengguna bertanya hal di luar DOKUMEN ATURAN (misal: cuaca, koding, politik, atau info luar), KAMU WAJIB MENOLAK dengan menjawab: "Maaf Bro, saya hanya memiliki akses untuk menjawab seputar SOP dan Aturan Internal Gapura."
+3. Jangan pernah mengarang jawaban atau menggunakan pengetahuan umummu jika tidak tertulis di dokumen.
+
+====================
+DOKUMEN ATURAN:
+
+Ketentuan membawa powerbank di pesawat meliputi wajib dibawa di bagasi kabin, kapasitas maksimal di bawah 100 Wh (sekitar 20.000 mAh), dan dilarang digunakan selama penerbangan. 
+
+Batasan Kapasitas Daya
+* Di bawah 100 Wh (≤ 20.000 mAh hingga 27.000 mAh): Boleh dibawa ke kabin tanpa izin khusus.
+* 100-160 Wh (20.000-32.000 mAh): Memerlukan izin atau persetujuan dari pihak maskapai.
+* Di atas 160 Wh: Dilarang keras dibawa ke dalam pesawat.
+* Keterangan tidak jelas: Powerbank dengan tulisan kapasitas atau logo yang pudar/tidak terbaca akan disita oleh petugas.
+
+Aturan Penyimpanan dan Penggunaan
+* Bagasi Kabin: Wajib dimasukkan ke dalam tas atau bagasi kabin dan tidak boleh ditaruh di bagasi tercatat/kargo.
+* Larangan Pakai: Dilarang menyalakan atau menggunakan powerbank untuk mengisi daya perangkat apa pun selama penerbangan.
+* Informasi Fisik: Pastikan informasi besaran Watt-hour (Wh) atau miliampere-hour (mAh) tertera dengan jelas pada fisik powerbank.
+
+====================` 
+                    }]
+                },
+                contents: chatHistory 
+            };
+            // ==========================================
+ 
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+ 
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates.length > 0) {
+                    const aiReply = data.candidates[0].content.parts[0].text;
+                    
+                    chatHistory.push({
+                        role: "model",
+                        parts: [{ text: aiReply }]
+                    });
+ 
+                    return aiReply;
+                } else if (data.error) {
+                    console.error("API Error Detail:", data.error);
+                    chatHistory.pop(); 
+                    return "Error dari AI: " + data.error.message;
+                } else {
+                    return "Maaf Bro, format respons tidak dikenali server.";
+                }
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                chatHistory.pop();
+                return "Gagal terhubung ke server AI. Coba cek koneksi internetmu.";
+            }
+        }
+        
+        async function handleSend() {
+            const text = userInput.value.trim();
+            if (text === '') return;
+ 
+            addMessage(text, 'user');
+            userInput.value = '';
+            showTypingIndicator();
+ 
+            const aiResponse = await callGeminiAPI(text);
+ 
+            removeTypingIndicator();
+            addMessage(aiResponse, 'ai');
+        }
+ 
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+    </script>
+</body>
+</html>
